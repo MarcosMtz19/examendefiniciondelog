@@ -449,6 +449,9 @@ function showResults() {
     });
 
     document.getElementById('result').innerHTML = html;
+    // Añadir mensaje de contacto
+        document.getElementById('result').innerHTML += `<p>Si te gustaría reforzar tu conocimiento puedo asesorarte, envíame mensaje vía WhatsApp <a href="https://wa.me/5540972313" target="_blank">5540972313</a>.</p>`;
+    
     MathJax.typesetPromise();
 }
 
