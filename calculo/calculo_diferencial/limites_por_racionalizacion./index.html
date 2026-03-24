@@ -1,1 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Test Limites Por Racionalizacion</title>
 
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async
+src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js"></script>
+
+<style>
+body{
+    background:#ccffcc;
+    font-size:18px;
+}
+#quiz-container{
+    width:80%;
+    max-width:600px;
+    margin:auto;
+    text-align:center;
+    background:#fff;
+    padding:20px;
+    border-radius:8px;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+    display:none;
+}
+.question-container,.option-container{
+    background:#f0f0f0;
+    border:1px solid #ddd;
+    margin:10px 0;
+    padding:16px;
+    border-radius:5px;
+}
+#options li{
+    list-style:none;
+    margin:5px 0;
+    padding:15px;
+    background:#e9ffe9;
+    cursor:pointer;
+    border-radius:5px;
+}
+#options li:hover{
+    background:#d0ffd0;
+}
+button{
+    margin-top:15px;
+    padding:10px 20px;
+    font-size:16px;
+}
+#question-number{
+    font-size:20px;
+    margin-bottom:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="start-container" style="text-align:center;margin-top:50px;">
+<h2>Ingresa tu nombre o alias</h2>
+<input type="text" id="student-name" placeholder="Escribe tu nombre" style="padding:10px;font-size:18px;">
+<br><br>
+<button onclick="startQuiz()">Comenzar Test</button>
+</div>
+
+<div id="quiz-container">
+<div id="question-number"></div>
+<div class="question-container" id="question"></div>
+<div id="question-image"></div>
+<ul id="options"></ul>
+<button id="next-question" onclick="loadNextQuestion()">Siguiente</button>
+<button id="finish-test" onclick="finishTest()">Terminar Test</button>
+</div>
+
+<div id="result"></div>
+
+<script>
+
+let studentName="";
+let currentQuestionIndex=0;
+let score=0;
+
+const allQuestions = [
+    {
+        pregunta: "\\(\\lim_{x \\to 2} \\frac{x^2 - 4}{3 - \\sqrt{x+7}}\\)",
+        imagen: "",
+        opciones: [
+            "-24",
+            "24",
+            "-12"
+        ],
+        respuestaCorrecta: "-24",
+        formula: "N/A",
+        explicacion: "Racionalización y factorización."
+    },
+    {
+        pregunta: "\\(\\lim_{y \\to -2} \\frac{y+2}{\\sqrt{y+3}-1}\\)",
+        imagen: "",
+        opciones: [
+            "2",
+            "-2",
+            "1"
+        ],
+        respuestaCorrecta: "2",
+        formula: "N/A",
+        explicacion: "Multiplicar por conjugado."
+    },
+    {
+        pregunta: "\\(\\lim_{x \\to 1} \\frac{\\sqrt{x+3}-2}{x-1}\\)",
+        imagen: "",
+        opciones: [
+            "\\(\\frac{1}{4}\\)",
+            "\\(\\frac{1}{2}\\)",
+            "\\(\\frac{1}{3}\\)"
+        ],
+        respuestaCorrecta: "\\(\\frac{1}{4}\\)",
+        formula: "N/A",
+        explicacion: "Racionalización."
+    },
+    {
+        pregunta: "\\(\\lim_{x \\to \\frac{1}{2}} \\frac{\\sqrt{4x^2+3}-2}{2x-1}\\)",
+        imagen: "",
+        opciones: [
+            "\\(\\frac{1}{2}\\)",
+            "1",
+            "0"
+        ],
+        respuestaCorrecta: "\\(\\frac{1}{2}\\)",
+        formula: "N/A",
+        explicacion: "Uso de conjugado."
+    },
+    {
+        pregunta: "\\(\\lim_{x \\to 5} \\frac{x-5}{\\sqrt{x}-\\sqrt{5}}\\)",
+        imagen: "",
+        opciones: [
+            "\\(2\\sqrt{5}\\)",
+            "\\(\\sqrt{5}\\)",
+            "10"
+        ],
+        respuestaCorrecta: "\\(2\\sqrt{5}\\)",
+        formula: "N/A",
+        explicacion: "Factorización notable."
+    },
+    {
+        pregunta: "\\(\\lim_{x \\to 1} \\frac{\\sqrt{x+3}-2}{1-\\sqrt{3x-2}}\\)",
+        imagen: "",
+        opciones: [
+            "\\(-\\frac{1}{6}\\)",
+            "\\(\\frac{1}{6}\\)",
+            "0"
+        ],
+        respuestaCorrecta: "\\(-\\frac{1}{6}\\)",
+        formula: "N/A",
+        explicacion: "Racionalización doble."
+    },
+    {
+        pregunta: "\\(\\lim_{x \\to 4} \\frac{\\sqrt{x^2+9}-5}{\\sqrt{x+5}-3}\\)",
+        imagen: "",
+        opciones: [
+            "\\(\\frac{24}{5}\\)",
+            "5",
+            "\\(\\frac{12}{5}\\)"
+        ],
+        respuestaCorrecta: "\\(\\frac{24}{5}\\)",
+        formula: "N/A",
+        explicacion: "Aplicación de conjugados."
+    }
+];
+
+
+
+// 🔥 ALEATORIO DE PREGUNTAS
+const questions=[...allQuestions]
+.sort(()=>0.5-Math.random())
+.slice(0,3);
+
+// 🔥 ALEATORIO DE OPCIONES
+questions.forEach(q=>{
+q.selectedAnswer=null;
+q.opciones=[...q.opciones].sort(()=>0.5-Math.random());
+});
+
+function startQuiz(){
+const name=document.getElementById("student-name").value.trim();
+if(name===""){alert("Escribe tu nombre");return;}
+studentName=name;
+document.getElementById("start-container").style.display="none";
+document.getElementById("quiz-container").style.display="block";
+loadQuestion(currentQuestionIndex);
+}
+
+function loadQuestion(index){
+
+const question=questions[index];
+document.getElementById("question").innerHTML=question.pregunta;
+document.getElementById("question-image").innerHTML="";
+
+if(question.imagen){
+const img=document.createElement("img");
+img.src=question.imagen;
+img.style.maxWidth="100%";
+document.getElementById("question-image").appendChild(img);
+}
+
+document.getElementById("question-number").innerHTML=
+`Pregunta ${index+1} de ${questions.length}`;
+
+const optionsContainer=document.getElementById("options");
+optionsContainer.innerHTML="";
+
+question.opciones.forEach(option=>{
+const li=document.createElement("li");
+li.innerHTML=option;
+
+li.onclick=()=>{
+if(question.selectedAnswer!==null) return;
+
+question.selectedAnswer=option;
+li.style.backgroundColor="#66cc66";
+
+document.getElementById("next-question").style.display=
+index<questions.length-1?"inline-block":"none";
+
+document.getElementById("finish-test").style.display=
+index===questions.length-1?"inline-block":"none";
+};
+
+optionsContainer.appendChild(li);
+});
+
+document.getElementById("next-question").style.display="none";
+document.getElementById("finish-test").style.display="none";
+
+MathJax.typesetPromise();
+}
+
+function loadNextQuestion(){
+currentQuestionIndex++;
+loadQuestion(currentQuestionIndex);
+}
+
+function finishTest(){
+
+score=0;
+
+questions.forEach(q=>{
+if(q.selectedAnswer===q.respuestaCorrecta){
+score++;
+}
+});
+
+const total=questions.length;
+const errores=total-score;
+const porcentaje=((score/total)*100).toFixed(2);
+
+document.getElementById("quiz-container").style.display="none";
+
+let html=`<h2>Resultado</h2>
+<p>${studentName}, obtuviste <strong>${score}</strong> de ${total} (${porcentaje}%).</p>
+<h3>Revisión:</h3>`;
+
+questions.forEach(q=>{
+
+let correcta=q.selectedAnswer===q.respuestaCorrecta;
+let fondo=correcta?"#d4edda":"#f8d7da";
+let borde=correcta?"#28a745":"#dc3545";
+let icono=correcta?"✔ Correcta":"✘ Incorrecta";
+
+html+=`
+<div style="
+background:${fondo};
+border:2px solid ${borde};
+margin:12px 0;
+padding:16px;
+border-radius:8px;
+">
+<strong>${icono}</strong><br><br>
+<strong>Pregunta:</strong> ${q.pregunta}<br>
+<strong>Tu respuesta:</strong> ${q.selectedAnswer || "No respondida"}<br>
+<strong>Respuesta correcta:</strong> ${q.respuestaCorrecta}<br><br>
+<strong>Explicación:</strong> ${q.explicacion}
+</div>
+`;
+});
+
+document.getElementById("result").innerHTML=html;
+MathJax.typesetPromise();
+
+fetch("https://script.google.com/macros/s/AKfycbx5zMbjXzJScGD6lxl0CkpLgvZRHZkXJ4-oDvD5vPEigFHqqRluUHFOw03aNFxypZ3g/exec",{
+method:"POST",
+body:JSON.stringify({
+nombre:studentName,
+aciertos:score,
+errores:errores,
+total:total,
+porcentaje:porcentaje
+})
+});
+}
+
+</script>
+</body>
+</html>
